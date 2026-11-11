@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>발표자 뽑기 프로그램</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #f1f5f9;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #cbd5e1;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 640px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    header h1 {
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    header p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    }
+
+    /* 결과 영역 - 애니메이션 없이 즉각 표시 */
+    .result-section {
+      text-align: center;
+      padding: 24px 16px;
+      background: #ffffff;
+      border: 2px solid #3b82f6;
+    }
+
+    .result-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 12px;
+    }
+
+    .winner-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      min-height: 60px;
+      align-items: center;
+    }
+
+    .winner-badge {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #ffffff;
+      background: #2563eb;
+      border-radius: 10px;
+      padding: 10px 22px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .winner-badge .suffix {
+      font-size: 1rem;
+      font-weight: 500;
+      opacity: 0.9;
+    }
+
+    .empty-state {
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
+
+    .notice-text {
+      font-size: 0.8rem;
+      color: #059669;
+      margin-top: 10px;
+      font-weight: 500;
+    }
+
+    /* 설정 폼 */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .form-group.full {
+      grid-column: span 2;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #334155;
+    }
+
+    label span.hint {
+      font-weight: 400;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+    }
+
+    input[type="number"], input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--primary);
+    }
+
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: #475569;
+      background: #f8fafc;
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin-top: 12px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .status-bar strong {
+      color: var(--primary);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      padding: 12px 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      flex: 2;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+    }
+
+    .btn-primary:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: #e2e8f0;
+      color: #334155;
+      flex: 1.2;
+    }
+
+    .btn-secondary:hover {
+      background: #cbd5e1;
+    }
+
+    .btn-danger {
+      background: #fee2e2;
+      color: #dc2626;
+      flex: 0.8;
+    }
+
+    .btn-danger:hover {
+      background: #fecaca;
+    }
+
+    .alert {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      margin-top: 10px;
+      display: none;
+    }
+
+    .alert.error {
+      display: block;
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+    }
+
+    /* 추첨 히스토리 */
+    .history-card {
+      font-size: 0.85rem;
+    }
+
+    .history-card h3 {
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+      color: #334155;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .history-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 140px;
+      overflow-y: auto;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 10px;
+      background: #f8fafc;
+      border-radius: 6px;
+      border-left: 3px solid var(--primary);
+    }
+
+    .history-speakers {
+      font-weight: 600;
+    }
+
+    .history-time {
+      color: #94a3b8;
+      font-size: 0.75rem;
+    }
+
+    @media (max-width: 500px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      .form-group.full {
+        grid-column: span 1;
+      }
+      .btn-row {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎯 발표자 뽑기</h1>
+      <p>애니메이션 없이 빠르고 정확하게 추첨합니다.</p>
+    </header>
+
+    <!-- 당첨 결과 (상단 즉시 노출) -->
+    <div class="card result-section">
+      <div class="result-title" id="result-status">설정 확인 후 [발표자 뽑기] 버튼을 눌러주세요</div>
+      <div class="winner-grid" id="winner-display">
+        <div class="empty-state">아직 추첨 전입니다.</div>
+      </div>
+      <div class="notice-text">※ 뽑힌 번호는 누적 제외되지 않으며, 다음 추첨 시에도 항상 후보에 포함됩니다.</div>
+      <div id="alert-box" class="alert"></div>
+    </div>
+
+    <!-- 입력 설정 -->
+    <div class="card">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="total-count">모든 사람 수 <span class="hint">(1번부터 시작)</span></label>
+          <input type="number" id="total-count" value="20" min="1">
+        </div>
+        <div class="form-group">
+          <label for="pick-count">발표자 수 <span class="hint">(추첨 인원)</span></label>
+          <input type="number" id="pick-count" value="2" min="1">
+        </div>
+        <div class="form-group full">
+          <label for="exclude-input">제외할 번호 <span class="hint">(공백 또는 쉼표로 구분, 없으면 공란)</span></label>
+          <input type="text" id="exclude-input" placeholder="예: 3, 5, 8">
+        </div>
+      </div>
+
+      <div class="status-bar">
+        <div>추첨 대상 후보: <strong id="allowed-count-text">20</strong>명</div>
+        <div>제외 설정 번호: <strong id="excluded-count-text" style="color:#ef4444">0</strong>명</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-primary" id="btn-draw">
+          발표자 뽑기 (Enter / Space)
+        </button>
+        <button class="btn-secondary" id="btn-redraw">
+          다시 뽑기
+        </button>
+        <button class="btn-danger" id="btn-reset">
+          초기화
+        </button>
+      </div>
+    </div>
+
+    <!-- 최근 추첨 기록 -->
+    <div class="card history-card" id="history-box" style="display: none;">
+      <h3>
+        <span>📜 추첨 기록</span>
+        <button id="btn-clear-history" style="background:none; border:none; color:var(--text-muted); font-size:0.75rem; cursor:pointer;">기록 비우기</button>
+      </h3>
+      <ul class="history-list" id="history-list"></ul>
+    </div>
+  </div>
+
+  <script>
+    // 상태 관리
+    let totalCount = 20;
+    let pickCount = 2;
+    let excludedSet = new Set();
+    let historyRecords = [];
+
+    const totalInput = document.getElementById('total-count');
+    const pickInput = document.getElementById('pick-count');
+    const excludeInput = document.getElementById('exclude-input');
+    const allowedText = document.getElementById('allowed-count-text');
+    const excludedText = document.getElementById('excluded-count-text');
+    const btnDraw = document.getElementById('btn-draw');
+    const btnRedraw = document.getElementById('btn-redraw');
+    const btnReset = document.getElementById('btn-reset');
+    const winnerDisplay = document.getElementById('winner-display');
+    const resultStatus = document.getElementById('result-status');
+    const alertBox = document.getElementById('alert-box');
+    const historyBox = document.getElementById('history-box');
+    const historyList = document.getElementById('history-list');
+    const btnClearHistory = document.getElementById('btn-clear-history');
+
+    // 제외 번호 동기화
+    function syncExcludeFromInput() {
+      const text = excludeInput.value.replace(/,/g, ' ').trim();
+      excludedSet.clear();
+      if (text) {
+        const tokens = text.split(/\s+/);
+        tokens.forEach(tok => {
+          const n = parseInt(tok, 10);
+          if (!isNaN(n) && n >= 1 && n <= totalCount) {
+            excludedSet.add(n);
+          }
+        });
+      }
+      updateStatus();
+    }
+
+    function updateStatus() {
+      totalCount = parseInt(totalInput.value, 10) || 1;
+      pickCount = parseInt(pickInput.value, 10) || 1;
+      const allowedCount = Math.max(0, totalCount - excludedSet.size);
+
+      allowedText.textContent = allowedCount;
+      excludedText.textContent = excludedSet.size;
+
+      if (pickCount > totalCount) {
+        showAlert(`발표자 수(${pickCount}명)는 전체 인원(${totalCount}명)보다 많을 수 없습니다.`);
+        btnDraw.disabled = true;
+      } else if (allowedCount < pickCount) {
+        showAlert(`남은 인원(${allowedCount}명)이 발표자 수(${pickCount}명)보다 적어 뽑을 수 없습니다.`);
+        btnDraw.disabled = true;
+      } else {
+        hideAlert();
+        btnDraw.disabled = false;
+      }
+    }
+
+    function showAlert(msg) {
+      alertBox.textContent = msg;
+      alertBox.className = 'alert error';
+    }
+
+    function hideAlert() {
+      alertBox.style.display = 'none';
+      alertBox.className = 'alert';
+    }
+
+    // 발표자 추첨 (애니메이션/딜레이 없이 즉시 실행)
+    function runDraw() {
+      totalCount = parseInt(totalInput.value, 10) || 0;
+      pickCount = parseInt(pickInput.value, 10) || 0;
+
+      // 설정된 제외 번호만 제외한 전체 대상군 생성 (이전 당첨자는 제외되지 않음)
+      const allowed = [];
+      for (let i = 1; i <= totalCount; i++) {
+        if (!excludedSet.has(i)) {
+          allowed.push(i);
+        }
+      }
+
+      if (allowed.length < pickCount) {
+        showAlert(`❌ 남은 사람 수(${allowed.length}명)가 발표자 수(${pickCount}명)보다 적어서 뽑을 수 없습니다.`);
+        return;
+      }
+
+      // 무작위 비복원 표본 추출 (random.sample과 동일)
+      const shuffled = [...allowed].sort(() => 0.5 - Math.random());
+      const selected = shuffled.slice(0, pickCount).sort((a, b) => a - b);
+
+      // 즉시 화면 출력
+      winnerDisplay.innerHTML = selected.map(n => `
+        <div class="winner-badge">
+          ${n}<span class="suffix">번</span>
+        </div>
+      `).join('');
+
+      resultStatus.textContent = `🎉 당첨된 발표자 번호 (${selected.length}명)`;
+
+      // 기록 추가
+      addHistory(selected);
+    }
+
+    function addHistory(winners) {
+      const timeStr = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      historyRecords.unshift({
+        time: timeStr,
+        winners: [...winners]
+      });
+
+      if (historyRecords.length > 10) historyRecords.pop();
+
+      historyBox.style.display = 'block';
+      historyList.innerHTML = historyRecords.map(r => `
+        <li class="history-item">
+          <span class="history-speakers">${r.winners.map(w => `${w}번`).join(', ')}</span>
+          <span class="history-time">${r.time}</span>
+        </li>
+      `).join('');
+    }
+
+    // 이벤트 리스너
+    totalInput.addEventListener('input', () => {
+      totalCount = Math.max(1, parseInt(totalInput.value, 10) || 1);
+      Array.from(excludedSet).forEach(n => {
+        if (n > totalCount) excludedSet.delete(n);
+      });
+      syncExcludeFromInput();
+    });
+
+    pickInput.addEventListener('input', updateStatus);
+    excludeInput.addEventListener('input', syncExcludeFromInput);
+
+    btnDraw.addEventListener('click', runDraw);
+    btnRedraw.addEventListener('click', runDraw);
+
+    btnReset.addEventListener('click', () => {
+      totalInput.value = 20;
+      pickInput.value = 2;
+      excludeInput.value = '';
+      excludedSet.clear();
+      resultStatus.textContent = '설정 확인 후 [발표자 뽑기] 버튼을 눌러주세요';
+      winnerDisplay.innerHTML = '<div class="empty-state">아직 추첨 전입니다.</div>';
+      hideAlert();
+      syncExcludeFromInput();
+    });
+
+    btnClearHistory.addEventListener('click', () => {
+      historyRecords = [];
+      historyList.innerHTML = '';
+      historyBox.style.display = 'none';
+    });
+
+    // 엔터/스페이스바 누르면 즉시 뽑기
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT') return;
+      if (e.code === 'Space' || e.code === 'Enter') {
+        e.preventDefault();
+        if (!btnDraw.disabled) runDraw();
+      }
+    });
+
+    // 시작 시 초기화
+    syncExcludeFromInput();
+  </script>
+</body>
+</html>
